@@ -2,7 +2,6 @@
 
 import os
 import re
-# from pymarkovchain import MarkovChain
 import markovify
 from urlparse import urlparse
 import argparse
@@ -173,28 +172,6 @@ def walkCode():
         getCommentsFromCode(output, filename)
     output.close()
 
-# def getCommentsFromCode(output, filename):
-#     regex = re.compile('[ \t]*\/? *\*([^*]+)|^[ ]*#(?!(?:include)|define)(.*)')
-#     for line in open(filename, 'r').readlines():
-#         results = regex.match(line)
-#         previous_line_was_comment = True
-#         last_thing_printed = ''
-#         if results:
-#             if results.groups()[0] is not None:
-#                 previous_line_was_comment = True
-#                 last_thing_printed = re.sub('[^0-9a-zA-Z-_ ]+', '', results.groups()[0])
-#                 output.write(last_thing_printed)
-#             elif results.groups()[1] is not None:
-#                 previous_line_was_comment = True
-#                 last_thing_printed = re.sub('[^0-9a-zA-Z-_ ]+', '', results.groups()[1])
-#                 output.write(last_thing_printed)
-#         else:
-#             previous_line_was_comment = False
-#         if not previous_line_was_comment and last_thing_printed.rstrip()[-1:] != '.':
-#             output.write('. ')
-#             last_thing_printed = '.'
-#             previous_line_was_comment = True
-
 def getCommentsFromCode(output, filename):
     regex = re.compile('^[ *]+(.+)|[ \\]+(.+)|[ #]+(?!(?:include)|define)(.+)')
     just_printed_period = False
@@ -214,12 +191,6 @@ def getCommentsFromCode(output, filename):
 
 def deleteRepo():
     shutil.rmtree('/var/tmp/clone_tmp')
-
-# def generateChain():
-#     mc = MarkovChain(os.path.expanduser("~/markov_db"))
-#     text = open(os.path.expanduser('~/temp_comment_output')).read()
-#     mc.generateDatabase(text)
-#     mc.dumpdb()
 
 def generateChain():
     text = open(os.path.expanduser('~/temp_comment_output')).read()
