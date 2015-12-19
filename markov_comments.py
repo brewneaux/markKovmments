@@ -157,7 +157,7 @@ def walkCode():
     global valid_extensions
     filelist = []
     outputFile = os.path.expanduser('~/temp_comment_output')
-    output = open(outputFile, 'w')
+    
     for dirname, dirnames, filenames in os.walk('/var/tmp/clone_tmp'):
         if '.git' in dirnames or '.git' in dirname:
             next
@@ -169,10 +169,10 @@ def walkCode():
 
     print "Walking {} code files for comments".format(len(filelist))
     for filename in filelist:
-        getCommentsFromCode(output, filename)
-    output.close()
+        getCommentsFromCode(outputFile, filename)
 
-def getCommentsFromCode(output, filename):
+def getCommentsFromCode(outputFile, filename):
+    output = open(outputFile, 'w')
     regex = re.compile('^[ *]+(.+)|[ \\]+(.+)|[ #]+(?!(?:include)|define)(.+)')
     just_printed_period = False
     for line in open(filename, 'r').readlines():
@@ -187,7 +187,7 @@ def getCommentsFromCode(output, filename):
         if not just_printed_period:
             output.write('. ')
             just_printed_period = True
-
+    output.close()
 
 def deleteRepo():
     shutil.rmtree('/var/tmp/clone_tmp')
