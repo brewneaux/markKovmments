@@ -15,13 +15,16 @@ class GetSentence(Resource):
     def get(self):
         return self.txt.make_sentence()
 
+class SeeRepoList(Resource):
+    def get(self):
+        return open(os.path.expanduser('~/repo_list')).read()
 
-print 'Loading chain...'
+
 chain = open(os.path.expanduser('~/markov_db')).read()
 txt = markovify.Text.from_chain(chain)
-print 'Chain loaded'
 
 api.add_resource(GetSentence, '/get_sentence', resource_class_kwargs=dict(mark=txt))
+api.add_resource(SeeRepoList, '/get_repo_list')
 
 if __name__ == '__main__':
-    app.run(debug=False)
+    app.run(host='0.0.0.0', port=10080)
