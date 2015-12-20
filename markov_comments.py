@@ -172,7 +172,7 @@ def walkCode():
         getCommentsFromCode(outputFile, filename)
 
 def getCommentsFromCode(outputFile, filename):
-    output = open(outputFile, 'w')
+    output = open(outputFile, 'a')
     comment_finder_regex = re.compile('^[ *]+(.+)|[ \\]+(.+)|[ #]+(?!(?:include)|define)(.+)')
     ignore_copyright_regex = re.compile('copyright', re.IGNORECASE)
     just_printed_period = False
@@ -188,6 +188,7 @@ def getCommentsFromCode(outputFile, filename):
         if not just_printed_period:
             output.write('. ')
             just_printed_period = True
+    output.write("\n")
     output.close()
 
 def deleteRepo():
