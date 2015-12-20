@@ -173,17 +173,18 @@ def walkCode():
 
 def getCommentsFromCode(outputFile, filename):
     output = open(outputFile, 'w')
-    regex = re.compile('^[ *]+(.+)|[ \\]+(.+)|[ #]+(?!(?:include)|define)(.+)')
+    comment_finder_regex = re.compile('^[ *]+(.+)|[ \\]+(.+)|[ #]+(?!(?:include)|define)(.+)')
+    ignore_copyright_regex = re.compile('copyright', re.IGNORECASE)
     just_printed_period = False
     for line in open(filename, 'r').readlines():
-        results = regex.match(line)
+        results = comment_finder_regex.match(line)
         if results:
             for grp in results.groups():
                 if grp is not None:
                     last_thing_printed = re.sub('[^0-9a-zA-Z-_ ]+', '', grp)
-                    if len(last_thing_printed) > 2:
+                    if len(last_thing_printed) > 2 and not ignore_copyright_regex.match(last_thing_printed):
                         just_printed_period = False
-                        output.write(last_thing_printed) 
+                        output.write(last_thing_printed)
         if not just_printed_period:
             output.write('. ')
             just_printed_period = True
