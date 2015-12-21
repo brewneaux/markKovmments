@@ -7,6 +7,7 @@ from urlparse import urlparse
 import argparse
 import subprocess
 import shutil
+import ConfigParser
 
 valid_extensions = [
     "ADA",
@@ -133,32 +134,40 @@ valid_extensions = [
     "Y"
 ]
 
+CLONE_TEMP_LOCATION = '/var/tmp/clone_tmp'
+MARKOV_DB_LOCATION = '~/markov_db'
+COMMENT_TEMP_LOCATION = '~/temp_comment_output'
+REPO_LIST_LOCATION = '~/repo_list'
+DEBUG = False
+
 def updateSourceList():
-    listFile = open(os.path.expanduser('~/repo_list'))
+    listFile = open(os.path.expanduser(REPO_LIST_LOCATION))
     print "Updating sources..."
     for repo in listFile.readlines():
         getRepo(repo.rstrip())
         print "Repo retrieved, walking..."
         walkCode()
-        deleteRepo()
+        if not DEBUG:
+            deleteRepo()
 
 def getRepo(repo):
     isUrl = urlparse(repo)
     print "Getting {}".format(repo)
+    if repo.strip() == '':
+        return;
     if not isUrl.scheme:
         raise ValueError('The inputted url was not actually a url.  stopit.')
-    dest = '/var/tmp/clone_tmp'
+    dest = os.path.expanduser(CLONE_TEMP_LOCATION)
     shutil.rmtree(dest, ignore_errors=True)
-    print ("git clone --depth=1 " + repo + " " + dest)
-    if subprocess.call("git clone --depth=1 " + repo + " " + dest, shell=True):
+    if subprocess.call("git clone --depth=1 " + repo + " " + dest + ' --quiet', shell=True):
         raise Exception('Git clone failed')
 
 def walkCode():
     global valid_extensions
     filelist = []
-    outputFile = os.path.expanduser('~/temp_comment_output')
+    outputFile = os.path.expanduser(COMMENT_TEMP_LOCATION)
     
-    for dirname, dirnames, filenames in os.walk('/var/tmp/clone_tmp'):
+    for dirname, dirnames, filenames in os.walk(CLONE_TEMP_LOCATION):
         if '.git' in dirnames or '.git' in dirname:
             next
 
@@ -192,22 +201,35 @@ def getCommentsFromCode(outputFile, filename):
     output.close()
 
 def deleteRepo():
-    shutil.rmtree('/var/tmp/clone_tmp')
+    shutil.rmtree(CLONE_TEMP_LOCATION)
 
 def generateChain():
-    text = open(os.path.expanduser('~/temp_comment_output')).read()
+    text = open(os.path.expanduser(COMMENT_TEMP_LOCATION)).read()
     mark = markovify.Text(text)
-    saved = open(os.path.expanduser('~/markov_db'), 'w')
+    saved = open(os.path.expanduser(MARKOV_DB_LOCATION), 'w')
     saved.write(markovify.Chain.to_json(mark.chain))
     saved.close()
     print mark.make_sentence()
 
 def getSentence():
-    chain = open(os.path.expanduser('~/markov_db')).read()
+    chain = open(os.path.expanduser(MARKOV_DB_LOCATION)).read()
     mark = markovify.Text.from_chain(chain)
     return mark.make_sentence()
 
+def dumpGlobals():
+    print 'Debug = {}'.format(DEBUG)
+    print 'CLONE_TEMP_LOCATION = {}'.format(CLONE_TEMP_LOCATION)
+    print 'MARKOV_DB_LOCATION = {}'.format(MARKOV_DB_LOCATION)
+    print 'COMMENT_TEMP_LOCATION = {}'.format(COMMENT_TEMP_LOCATION)
+    print 'REPO_LIST_LOCATION = {}'.format(REPO_LIST_LOCATION)
+
 def main():
+    global CLONE_TEMP_LOCATION
+    global MARKOV_DB_LOCATION
+    global COMMENT_TEMP_LOCATION
+    global REPO_LIST_LOCATION
+    global DEBUG
+
     parser = argparse.ArgumentParser(description='Steal comments from GitHub repos, markov them, and make some cool stuff.')
 
     parser.add_argument('--update',
@@ -222,7 +244,28 @@ def main():
         action='store_true',
         help='Gets a sentence from the default chain')
 
+    parser.add_argument('--debug',
+        action='store_true',
+        help='Sets debug mode')
+
+    if os.path.isfile('config.ini'):
+        Config = ConfigParser.ConfigParser()
+        Config.read("config.ini")
+        if Config.get('main', 'clone_temp_location'):
+            CLONE_TEMP_LOCATION = Config.get('main', 'clone_temp_location')
+        if Config.get('main', 'markov_db_location'):
+            MARKOV_DB_LOCATION = Config.get('main', 'markov_db_location')
+        if Config.get('main', 'comment_temp_location'):
+            COMMENT_TEMP_LOCATION = Config.get('main', 'comment_temp_location')
+        if Config.get('main', 'repo_list_location'):
+            REPO_LIST_LOCATION = Config.get('main', 'repo_list_location')
+
     args = parser.parse_args()
+
+    if args.debug:
+        DEBUG = True
+        dumpGlobals()
+
     if args.update:
         updateSourceList()
         generateChain()
