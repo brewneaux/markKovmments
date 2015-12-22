@@ -141,39 +141,54 @@ REPO_LIST_LOCATION = '~/repo_list'
 DEBUG = False
 
 def updateSourceList():
+    if os.path.isfile(MARKOV_DB_LOCATION):
+        backup = MARKOV_DB_LOCATION + '_bak'
+        if os.path.isfile(backup):
+            os.remove(backup)
+        shutil.move(MARKOV_DB_LOCATION, backup)
+
+    if os.path.isfile(COMMENT_TEMP_LOCATION):
+        backup = COMMENT_TEMP_LOCATION + '_bak'
+        if os.path.isfile(backup):
+            os.remove(backup)
+        shutil.move(COMMENT_TEMP_LOCATION, backup)
+
     listFile = open(os.path.expanduser(REPO_LIST_LOCATION))
     print "Updating sources..."
     for repo in listFile.readlines():
-        getRepo(repo.rstrip())
-        print "Repo retrieved, walking..."
-        walkCode()
-        if not DEBUG:
-            deleteRepo()
+        cont = getRepo(repo.rstrip())
+        if cont:
+            print "Repo retrieved, walking..."
+            walkCode()
+            if not DEBUG:
+                deleteRepo()
+    print "Done updating sources and comment file"
 
 def getRepo(repo):
     isUrl = urlparse(repo)
-    print "Getting {}".format(repo)
     if repo.strip() == '':
-        return;
+        return False;
     if not isUrl.scheme:
         raise ValueError('The inputted url was not actually a url.  stopit.')
+    print "Getting {}".format(repo)
     dest = os.path.expanduser(CLONE_TEMP_LOCATION)
     shutil.rmtree(dest, ignore_errors=True)
     if subprocess.call("git clone --depth=1 " + repo + " " + dest + ' --quiet', shell=True):
         raise Exception('Git clone failed')
+    return True
 
 def walkCode():
     global valid_extensions
     filelist = []
     outputFile = os.path.expanduser(COMMENT_TEMP_LOCATION)
-    
+
     for dirname, dirnames, filenames in os.walk(CLONE_TEMP_LOCATION):
         if '.git' in dirnames or '.git' in dirname:
             next
 
         for filename in filenames:
             name, ext = os.path.splitext(filename)
-            if ext.upper().replace('.','') in valid_extensions:
+            if ext.upper().replace('.', '') in valid_extensions:
                 filelist.append(os.path.join(dirname, filename))
 
     print "Walking {} code files for comments".format(len(filelist))
@@ -182,7 +197,7 @@ def walkCode():
 
 def getCommentsFromCode(outputFile, filename):
     output = open(outputFile, 'a')
-    comment_finder_regex = re.compile('^[ *]+(.+)|[ \\]+(.+)|[ #]+(?!(?:include)|define)(.+)')
+    comment_finder_regex = re.compile(r'^(?:\s+#|\s[\\]\s+|(?:\s*[*]+))([^@]*)')
     ignore_copyright_regex = re.compile('copyright', re.IGNORECASE)
     just_printed_period = False
     for line in open(filename, 'r').readlines():

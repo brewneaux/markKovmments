@@ -1,5 +1,5 @@
 [main]
-clone_temp_location: ~/markKovmments/tmp_clone
-markov_db_location: ~/markKovmments/markov_db
-comment_temp_location: ~/markKovmments/temp_comment_output
-repo_list_location: ~/markKovmments/repo_list
+clone_temp_location: ./tmp_clone
+markov_db_location: ./markov_db
+comment_temp_location: ./temp_comment_output
+repo_list_location: ./repo_list
